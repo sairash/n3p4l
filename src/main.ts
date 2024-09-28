@@ -26,11 +26,20 @@ type GeoJSON = {
 };
 
 
+interface location_with_id {
+  lat_lng: number[],
+  vdc_code: number,
+  district: string,
+  vdc_name: string,
+  zone_name: string,
+  region: string
+}
+
 const nepal_json_ts = nepal_json as GeoJSON
 
 
-function calculateCentroid(geojson: GeoJSON): Number[][]  {
-  const center_points: Number[][] = []
+function calculateCentroid(geojson: GeoJSON): location_with_id[]  {
+  const center_points: location_with_id[] = []
   console.log(geojson.features.length)
   geojson.features.forEach(feature => {
     if(feature.geometry == null){
@@ -46,7 +55,14 @@ function calculateCentroid(geojson: GeoJSON): Number[][]  {
       });
       const lat_lng_center = [totalLat / coordinates[0].length, totalLng / coordinates[0].length]
       if(!Number.isNaN(lat_lng_center[0])){
-        center_points.push(lat_lng_center)
+        center_points.push({
+          lat_lng: lat_lng_center,
+          vdc_code: feature.properties.VDC_CODE as number,
+          district: feature.properties.DISTRICT as string,
+          vdc_name: feature.properties.VDC_NAME as string,
+          zone_name: feature.properties.ZONE_NAME as string,
+          region: feature.properties.REGION as string
+        })
         Leaflet.circle(lat_lng_center as LatLngTuple, {
           radius: 500
         }).addTo(map)
@@ -65,24 +81,25 @@ Leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 // Call the function
-// console.log(calculateCentroid(nepal_json_ts));
+console.log(calculateCentroid(nepal_json_ts));
 
 
-// visiting_points.forEach(points => {
-//   Leaflet.circle(points as LatLngTuple, {
-//     radius: 500
-//   }).addTo(map)
-//});
-Leaflet.circle(visiting_points[0] as LatLngTuple, {
-  radius: 500
-}).addTo(map)
-
-
-const near_road = await findNearestRoad(visiting_points[0][0], visiting_points[0][1])
-
-if(near_road != null){
-  Leaflet.marker([near_road.lat, near_road.lon]).addTo(map)
+for (let index = 0; index < visiting_points.length; index++) {
+  const element = visiting_points[index];
+  Leaflet.circle(element.lat_lng as LatLngTuple, {
+    radius: 500
+  }).addTo(map)
+  
+  
+  // const near_road = await findNearestRoad(visiting_points[0][0], visiting_points[0][1])
+  // if(near_road != null){
+  //  Leaflet.marker([near_road.lat, near_road.lon]).addTo(map)
+  // }
+  
 }
+  
+
+
 
 // findNearestRoad(visiting_points[1][0], visiting_points[1][1])
 // findNearestRoad(visiting_points[2][0], visiting_points[2][1])
