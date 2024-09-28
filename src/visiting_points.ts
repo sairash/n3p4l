@@ -1,4 +1,4 @@
-const visiting_points = [
+ export const visiting_points = [
     [
         28.95339029590451,
         81.28545901700438

@@ -5,6 +5,9 @@ import nepal_json from "./nepal-wards.json"
 import Leaflet, { LatLngTuple } from "leaflet"
 import "leaflet/dist/leaflet.css"
 
+import {visiting_points} from "./visiting_points";
+import { findNearestRoad } from './nearestRoad';
+
 // setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
 
 type GeoJSONFeature = {
@@ -62,6 +65,25 @@ Leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 // Call the function
-console.log(calculateCentroid(nepal_json_ts));
+// console.log(calculateCentroid(nepal_json_ts));
 
 
+// visiting_points.forEach(points => {
+//   Leaflet.circle(points as LatLngTuple, {
+//     radius: 500
+//   }).addTo(map)
+//});
+Leaflet.circle(visiting_points[0] as LatLngTuple, {
+  radius: 500
+}).addTo(map)
+
+
+const near_road = await findNearestRoad(visiting_points[0][0], visiting_points[0][1])
+
+if(near_road != null){
+  Leaflet.marker([near_road.lat, near_road.lon]).addTo(map)
+}
+
+// findNearestRoad(visiting_points[1][0], visiting_points[1][1])
+// findNearestRoad(visiting_points[2][0], visiting_points[2][1])
+// findNearestRoad(visiting_points[3][0], visiting_points[3][1])
