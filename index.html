@@ -16,13 +16,13 @@
       <div id="map"></div>
       <div class="" style="display: flex; width: 100%; justify-content: space-between; position: fixed; top: 0; z-index: 1000;">
 
-        <input type="button" id="prev" value="Prev">
-        <input type="text" id="number" placeholder="prefix">
-        <input type="text" id="amount" placeholder="amount">
-        <input type="button" id="next" value="Next">
+        <input type="button" id="prev" value="Stop">
+        <input type="text" id="prefix" value="0" placeholder="prefix">
+        <input type="text" id="amount" value="100" placeholder="amount">
+        <input type="button" id="next" value="Start">
       </div>
 
-      <div style="font-size: x-large; z-index: 1000; position: fixed; bottom: 0; left: 0; color: red;">1000</div>
+      <div style="font-size: x-large; z-index: 1000; position: fixed; bottom: 0; left: 0; color: red; background-color: white; padding: 5px 10px;" id="working">0</div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

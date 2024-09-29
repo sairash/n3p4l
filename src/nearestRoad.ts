@@ -32,8 +32,8 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 // Fetch the nearest road data using the Overpass API
-export async function findNearestRoad(lat: number, lon: number): Promise<Node | null> {
-    const overpassUrl = `https://overpass-api.de/api/interpreter?data=[out:json];way(around:500,${lat},${lon})["highway"];out body;>;out skel qt;`;
+export async function findNearestRoad(lat: number, lon: number, meters: number = 500): Promise<Node | null> {
+    const overpassUrl = `https://overpass-api.de/api/interpreter?data=[out:json];way(around:${meters},${lat},${lon})["highway"];out body;>;out skel qt;`;
 
     try {
         const response = await fetch(overpassUrl);
@@ -62,11 +62,12 @@ export async function findNearestRoad(lat: number, lon: number): Promise<Node | 
                 nearestNode = node;
             }
         });
+        
 
         if (nearestNode) {
             return nearestNode
         } else {
-            console.log('No road found nearby.');
+            console.log('No road found nearby in', meters, "meters distance.");
         }
     } catch (error) {
         console.error('Error fetching Overpass data:', error);
