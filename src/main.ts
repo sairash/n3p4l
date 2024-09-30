@@ -5,8 +5,8 @@ import nepal_json from "./nepal-wards.json"
 import Leaflet, { latLngBounds, LatLngTuple, PointTuple } from "leaflet"
 import "leaflet/dist/leaflet.css"
 
-import { visiting_points } from "./visiting_points";
-import { findNearestRoad } from './nearestRoad';
+import { large_geo_hash, NumberArrayObject, StringArrayObject, visiting_points } from "./visiting_points";
+import { findNearestRoad, haversineDistance } from './nearestRoad';
 import axios from 'axios';
 import Geohash from 'latlon-geohash';
 
@@ -19,7 +19,7 @@ const amount = document.getElementById("amount") as HTMLInputElement
 const working_dom_amount = document.getElementById("working") as HTMLElement
 
 prev.onclick = stop;
-next.onclick = convert_to_geohash_and_plot;
+next.onclick = get_neighoubrs_and_scale_them;
 
 let work = false
 
@@ -104,8 +104,11 @@ Leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 console.log("Total Visting Points: ", visiting_points.length - 1)
 
 
-function geo_hash_gen(lat: number, lng: number, amount: number = 5, color: string = "#ff0"): string{
-  const geo_hash_of_road = Geohash.encode(lat, lng, amount)
+function geo_hash_gen(lat: number = 0, lng: number = 0, amount: number = 5, color: string = "#ff0", geo_hash_of_road: string = ""): string {
+  if (geo_hash_of_road == "") {
+    geo_hash_of_road = Geohash.encode(lat, lng, amount)
+  }
+
   const bounds = Geohash.bounds(geo_hash_of_road)
   Leaflet.rectangle(latLngBounds([bounds.sw.lat, bounds.sw.lon], [bounds.ne.lat, bounds.ne.lon])).setStyle({
     fillColor: color
@@ -113,19 +116,52 @@ function geo_hash_gen(lat: number, lng: number, amount: number = 5, color: strin
   return geo_hash_of_road
 }
 
+
+
 async function convert_to_geohash_and_plot() {
-  let geo_hash_large: { [key: string]: string[] } = {};
-  let geo_hash_small: { [key: string]: number[] } = {};
+  let geo_hash_large: StringArrayObject = {};
+  let geo_hash_small: NumberArrayObject = {};
   visiting_points.forEach((element, index) => {
-    const large_hash = geo_hash_gen(element.nearest_road_lat_lng[0],element.nearest_road_lat_lng[1], 4)
-    const small_hash = geo_hash_gen(element.nearest_road_lat_lng[0],element.nearest_road_lat_lng[1], 5, "#f00")
-    geo_hash_large[large_hash] = geo_hash_large[large_hash] == undefined? [small_hash]:[...geo_hash_large[large_hash], small_hash];
-    geo_hash_small[small_hash] = geo_hash_small[small_hash] == undefined? [index]: [...geo_hash_small[small_hash], index];
+    const large_hash = geo_hash_gen(element.nearest_road_lat_lng[0], element.nearest_road_lat_lng[1], 4)
+    const small_hash = geo_hash_gen(element.nearest_road_lat_lng[0], element.nearest_road_lat_lng[1], 5, "#f00")
+    geo_hash_large[large_hash] = geo_hash_large[large_hash] == undefined ? [small_hash] : [...geo_hash_large[large_hash], small_hash];
+    geo_hash_small[small_hash] = geo_hash_small[small_hash] == undefined ? [index] : [...geo_hash_small[small_hash], index];
   });
 
   // console.log(geo_hash_large)
   // console.log(geo_hash_small)
 }
+
+async function get_neighoubrs_and_scale_them() {
+  const points: any[]= []
+  const keys = Object.keys(large_geo_hash)
+  keys.forEach((e) => {
+    geo_hash_gen(0, 0, 0, "", e)
+    const convert_back = Geohash.decode(e);
+    Leaflet.circle([convert_back.lat, convert_back.lon], {
+      radius: 500
+    }).setStyle({
+      fillColor: "red"
+    }).addTo(map)
+
+    const nei = Geohash.neighbours(e)
+
+    Object.keys(nei).forEach((d) => {
+      let de: keyof Geohash.Neighbours = d as any
+      const val: keyof StringArrayObject = nei[de]
+      if (large_geo_hash[val] != undefined) {
+        const convert_back_neigh = Geohash.decode(val);
+        points.push([e, val, haversineDistance(convert_back.lat, convert_back.lon, convert_back_neigh.lat, convert_back_neigh.lon)])
+        Leaflet.polyline([[convert_back.lat, convert_back.lon], [convert_back_neigh.lat, convert_back_neigh.lon]]).addTo(map)
+      }
+    });
+  });
+
+  console.log(points)
+}
+
+
+
 
 async function start() {
   work = true
