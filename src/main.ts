@@ -2,12 +2,13 @@ import './style.css'
 
 import nepal_json from "./nepal-wards.json"
 
-import Leaflet, { LatLngTuple } from "leaflet"
+import Leaflet, { latLngBounds, LatLngTuple, PointTuple } from "leaflet"
 import "leaflet/dist/leaflet.css"
 
 import { visiting_points } from "./visiting_points";
 import { findNearestRoad } from './nearestRoad';
 import axios from 'axios';
+import Geohash from 'latlon-geohash';
 
 
 
@@ -18,7 +19,7 @@ const amount = document.getElementById("amount") as HTMLInputElement
 const working_dom_amount = document.getElementById("working") as HTMLElement
 
 prev.onclick = stop;
-next.onclick = start;
+next.onclick = convert_to_geohash_and_plot;
 
 let work = false
 
@@ -101,6 +102,30 @@ Leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 // console.log(calculateCentroid(nepal_json_ts));
 
 console.log("Total Visting Points: ", visiting_points.length - 1)
+
+
+function geo_hash_gen(lat: number, lng: number, amount: number = 5, color: string = "#ff0"): string{
+  const geo_hash_of_road = Geohash.encode(lat, lng, amount)
+  const bounds = Geohash.bounds(geo_hash_of_road)
+  Leaflet.rectangle(latLngBounds([bounds.sw.lat, bounds.sw.lon], [bounds.ne.lat, bounds.ne.lon])).setStyle({
+    fillColor: color
+  }).addTo(map)
+  return geo_hash_of_road
+}
+
+async function convert_to_geohash_and_plot() {
+  let geo_hash_large: { [key: string]: string[] } = {};
+  let geo_hash_small: { [key: string]: number[] } = {};
+  visiting_points.forEach((element, index) => {
+    const large_hash = geo_hash_gen(element.nearest_road_lat_lng[0],element.nearest_road_lat_lng[1], 4)
+    const small_hash = geo_hash_gen(element.nearest_road_lat_lng[0],element.nearest_road_lat_lng[1], 5, "#f00")
+    geo_hash_large[large_hash] = geo_hash_large[large_hash] == undefined? [small_hash]:[...geo_hash_large[large_hash], small_hash];
+    geo_hash_small[small_hash] = geo_hash_small[small_hash] == undefined? [index]: [...geo_hash_small[small_hash], index];
+  });
+
+  // console.log(geo_hash_large)
+  // console.log(geo_hash_small)
+}
 
 async function start() {
   work = true
